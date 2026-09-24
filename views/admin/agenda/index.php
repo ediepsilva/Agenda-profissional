@@ -14,16 +14,21 @@ $title = match ($viewMode) {
     'mes' => ucfirst(month_name((int) $date->format('n'))) . ' de ' . $date->format('Y'),
 };
 
-$chip = static function (array $b, bool $long = false): string {
+$what = static fn (array $b) => $b['kind'] === 'event' ? '★ ' . $b['event_name'] : $b['service_name'];
+$chip = static function (array $b, bool $long = false) use ($what, $team): string {
     $cls = 'chip-booking status-' . $b['status'];
-    $label = time_br($b['starts_at']) . ' ' . $b['client_name'] . ($long ? ' — ' . $b['service_name'] : '');
+    $n = count($team[(int) $b['id']] ?? []);
+    $label = time_br($b['starts_at']) . ' ' . ($b['kind'] === 'event' && !$long ? '★ ' : '') . $b['client_name'] . ($long ? ' — ' . $what($b) : '') . ($n > 1 ? " ($n prof.)" : '');
     return '<a class="' . e($cls) . '" style="border-left-color:' . e($b['professional_color']) . '" href="' . e(url('/admin/reservas/' . $b['id'])) . '" title="' . e($b['service_name'] . ' · ' . $b['professional_name'] . ' · ' . App\Domain\BookingService::label($b['status'])) . '">' . e($label) . '</a>';
 };
 $blockChip = static fn (array $bl) => '<span class="chip-block" title="' . e($bl['professional_name']) . '">⛔ ' . e(time_br($bl['starts_at']) . '–' . time_br($bl['ends_at'])) . ($bl['reason'] ? ' · ' . e($bl['reason']) : '') . '</span>';
 ?>
 <header class="page-header">
     <h1>Agenda</h1>
-    <?php if (Auth::can('bookings.manage')): ?><a class="btn btn-primary" href="<?= e(url('/admin/reservas/nova', ['data' => $date->format('Y-m-d')])) ?>">+ Nova reserva</a><?php endif; ?>
+    <?php if (Auth::can('bookings.manage')): ?><div class="header-actions">
+        <a class="btn btn-ghost" href="<?= e(url('/admin/eventos/novo', ['data' => $date->format('Y-m-d')])) ?>">+ Evento</a>
+        <a class="btn btn-primary" href="<?= e(url('/admin/reservas/nova', ['data' => $date->format('Y-m-d')])) ?>">+ Nova reserva</a>
+    </div><?php endif; ?>
 </header>
 
 <div class="toolbar">
@@ -38,6 +43,7 @@ $blockChip = static fn (array $bl) => '<span class="chip-block" title="' . e($bl
         <a class="btn btn-ghost btn-sm" href="<?= e($q(['data' => $next->format('Y-m-d')])) ?>" aria-label="Próximo">›</a>
     </div>
     <form method="get" action="<?= e(url('/admin/agenda')) ?>" class="filters" data-autosubmit>
+        <?php if (!$scoped): ?>
         <input type="hidden" name="visao" value="<?= e($viewMode) ?>">
         <input type="hidden" name="data" value="<?= e($date->format('Y-m-d')) ?>">
         <label class="sr-only" for="f-prof">Profissional</label>
@@ -47,6 +53,7 @@ $blockChip = static fn (array $bl) => '<span class="chip-block" title="' . e($bl
                 <option value="<?= (int) $p['id'] ?>"<?= selected($proFilter, $p['id']) ?>><?= e($p['name']) ?></option>
             <?php endforeach; ?>
         </select>
+        <?php endif; ?>
         <label class="check"><input type="checkbox" name="canceladas" value="1"<?= checked($showCancelled) ?>> Mostrar canceladas</label>
         <noscript><button class="btn btn-sm">Filtrar</button></noscript>
     </form>
@@ -54,7 +61,23 @@ $blockChip = static fn (array $bl) => '<span class="chip-block" title="' . e($bl
 
 <h2 class="agenda-title"><?= e($title) ?></h2>
 
-<?php if ($viewMode === 'dia'):
+<?php if ($viewMode === 'dia' && !$proFilter && count($professionals) > 1):
+    $d = $byDay[$date->format('Y-m-d')] ?? ['bookings' => [], 'blocks' => []]; ?>
+    <div class="team-day">
+    <?php foreach ($professionals as $p): ?>
+        <section class="team-col" style="border-top-color: <?= e($p['color']) ?>">
+            <h3><span class="dot" style="background: <?= e($p['color']) ?>"></span> <?= e($p['name']) ?></h3>
+            <?php
+            $mine = array_filter($d['bookings'], static fn ($b) => in_array((int) $p['id'], array_map('intval', array_column($team[(int) $b['id']] ?? [], 'professional_id')), true));
+            $myBlocks = array_filter($d['blocks'], static fn ($bl) => (int) $bl['professional_id'] === (int) $p['id']);
+            foreach ($myBlocks as $bl) echo $blockChip($bl);
+            foreach ($mine as $b) echo $chip($b, true);
+            if (!$mine && !$myBlocks): ?><p class="muted small">Livre</p><?php endif; ?>
+        </section>
+    <?php endforeach; ?>
+    </div>
+
+<?php elseif ($viewMode === 'dia'):
     $d = $byDay[$date->format('Y-m-d')] ?? ['bookings' => [], 'blocks' => []]; ?>
     <div class="panel">
         <?php foreach ($d['blocks'] as $bl): ?><p><?= $blockChip($bl) ?></p><?php endforeach; ?>
@@ -66,8 +89,8 @@ $blockChip = static fn (array $bl) => '<span class="chip-block" title="' . e($bl
                 <li class="day-item status-<?= e($b['status']) ?>" style="border-left-color: <?= e($b['professional_color']) ?>">
                     <a href="<?= e(url('/admin/reservas/' . $b['id'])) ?>">
                         <span class="day-time"><?= e(time_br($b['starts_at'])) ?>–<?= e(time_br($b['ends_at'])) ?></span>
-                        <span><strong><?= e($b['client_name']) ?></strong> · <?= e($b['service_name']) ?></span>
-                        <span class="muted small"><?= e($b['professional_name']) ?> · <?= $b['location_type'] === 'client' ? 'No local da cliente' . ((int) $b['travel_minutes'] ? ' (+' . (int) $b['travel_minutes'] . ' min deslocamento)' : '') : 'Estúdio' ?></span>
+                        <span><strong><?= e($b['client_name']) ?></strong> · <?= e($what($b)) ?></span>
+                        <span class="muted small"><?= e(implode(', ', array_column($team[(int) $b['id']] ?? [], 'name'))) ?> · <?= $b['location_type'] === 'client' ? 'No local da cliente' . ((int) $b['travel_minutes'] ? ' (+' . (int) $b['travel_minutes'] . ' min deslocamento)' : '') : 'Estúdio' ?></span>
                         <?= status_badge($b['status']) ?>
                     </a>
                 </li>

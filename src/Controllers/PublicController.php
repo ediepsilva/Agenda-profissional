@@ -18,6 +18,7 @@ final class PublicController extends Controller
         $this->view('public/home', [
             'services' => $this->services(),
             'areas' => $this->areas(),
+            'team' => Db::all('SELECT name, bio, color FROM professionals WHERE active = 1 AND accepts_online_booking = 1 ORDER BY id'),
         ], 'public');
     }
 

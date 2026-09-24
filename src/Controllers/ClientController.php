@@ -24,6 +24,12 @@ final class ClientController extends Controller
             $where = $digits !== '' ? '(c.name LIKE ? OR c.phone LIKE ? OR c.email LIKE ?)' : '(c.name LIKE ? OR c.email LIKE ?)';
             $params = $digits !== '' ? ["%$q%", "%$digits%", "%$q%"] : ["%$q%", "%$q%"];
         }
+        // Escopo "próprio": apenas clientes com atendimento alocado à profissional.
+        $scope = Auth::professionalScope('clients.view');
+        if ($scope !== null) {
+            $where .= ' AND EXISTS (SELECT 1 FROM bookings sb JOIN booking_allocations sa ON sa.booking_id = sb.id WHERE sb.client_id = c.id AND sa.professional_id = ?)';
+            $params[] = $scope;
+        }
         $total = (int) Db::value("SELECT COUNT(*) FROM clients c WHERE $where", $params);
         $offset = ($page - 1) * self::PER_PAGE;
         $rows = Db::all(
@@ -46,15 +52,17 @@ final class ClientController extends Controller
     public function show(string $id): void
     {
         $c = Db::one('SELECT * FROM clients WHERE id = ?', [(int) $id]);
-        if (!$c) {
+        $scope = Auth::professionalScope('clients.view');
+        if (!$c || ($scope !== null && !Db::value('SELECT 1 FROM bookings b JOIN booking_allocations a ON a.booking_id = b.id WHERE b.client_id = ? AND a.professional_id = ? LIMIT 1', [$c['id'], $scope]))) {
             $this->notFound();
             return;
         }
+        [$scopeSql, $scopeParams] = $this->bookingScopeSql($scope);
         $bookings = Db::all(
             'SELECT b.*, s.name AS service_name, p.name AS professional_name
              FROM bookings b JOIN services s ON s.id = b.service_id JOIN professionals p ON p.id = b.professional_id
-             WHERE b.client_id = ? ORDER BY b.starts_at DESC',
-            [$c['id']]
+             WHERE b.client_id = ?' . $scopeSql . ' ORDER BY b.starts_at DESC',
+            [$c['id'], ...$scopeParams]
         );
         $completed = array_filter($bookings, static fn ($b) => $b['status'] === 'completed');
         $this->view('admin/clients/show', [

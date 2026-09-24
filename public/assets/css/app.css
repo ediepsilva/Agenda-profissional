@@ -286,9 +286,53 @@ body.admin { display: flex; flex-direction: column; min-height: 100vh; }
 .area-row.inactive { opacity: .6; }
 .area-row .check { margin: .6rem 0; }
 .area-actions { display: flex; gap: .4rem; padding-bottom: .1rem; }
-@media (min-width: 860px) { .area-row { grid-template-columns: 2fr 1fr 1fr .7fr auto auto; } .area-row > div:first-of-type { grid-column: auto; } }
+@media (min-width: 860px) { .area-row { grid-template-columns: 2fr 1fr 1fr 1.3fr .7fr auto auto; } .area-row > div:first-of-type { grid-column: auto; } }
 
 @media print { .sidebar, .toolbar, .btn { display: none !important; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 @media (max-width: 420px) { .brand { font-size: 1.1rem; } .site-header nav { gap: .6rem; } }
 .week-day .chip-booking { white-space: normal; }
+
+/* ---------- Fase 2: equipe, eventos, financeiro, relatórios ---------- */
+.text-ok { color: var(--ok); }
+.text-warn { color: var(--warn); }
+.text-danger { color: var(--danger); }
+.badge-event { background: #f3e6d6; color: #7a5227; }
+.team-day { display: grid; gap: .75rem; grid-template-columns: 1fr; }
+@media (min-width: 720px) { .team-day { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); } }
+.team-col { background: var(--surface); border: 1px solid var(--border); border-top: 4px solid var(--brand); border-radius: var(--radius-sm); padding: .7rem; min-width: 0; }
+.team-col h3 { font-size: .95rem; display: flex; align-items: center; gap: .4rem; }
+.team-col .chip-booking { white-space: normal; }
+.team-list, .suggest-list, .money-list { list-style: none; padding: 0; margin: 0 0 1rem; }
+.team-list li, .suggest-list li, .money-list li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .4rem; padding: .5rem 0; border-bottom: 1px solid var(--border); }
+.suggest-list li.busy > span:first-child { opacity: .6; }
+.team-actions { display: flex; gap: .35rem; flex-wrap: wrap; }
+.fin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; margin-bottom: 1rem; }
+@media (min-width: 900px) { .fin-grid { grid-template-columns: repeat(3, 1fr); } }
+.fin-grid > div { display: flex; flex-direction: column; background: var(--bg); border-radius: var(--radius-sm); padding: .55rem .7rem; }
+.fin-grid strong { font-size: 1.05rem; }
+.fin-result { grid-column: 1 / -1; }
+.fin-result strong { font-size: 1.3rem; }
+.panel details { margin: .5rem 0 1rem; }
+.panel details summary { cursor: pointer; color: var(--brand); font-weight: 600; }
+.panel h3 { margin-top: 1.25rem; }
+.table-compact th, .table-compact td { padding: .45rem .6rem; }
+.input-pct { max-width: 90px; min-height: 36px !important; padding: .25em .5em !important; }
+.check-grid { display: grid; gap: .1rem 1rem; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.check-grid .check { margin: .35rem 0; }
+.team-pick { display: grid; gap: .2rem 1rem; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.team-pick .check { margin: .4rem 0; }
+.bar-list { list-style: none; padding: 0; margin: 0; }
+.bar-list li { display: grid; grid-template-columns: minmax(110px, 38%) 1fr auto; gap: .6rem; align-items: center; padding: .3rem 0; font-size: .92rem; }
+.bar { height: 10px; background: var(--bg); border-radius: 999px; overflow: hidden; }
+.bar-fill { display: block; height: 100%; background: var(--brand); border-radius: 999px; min-width: 2px; }
+.bar-fill.badge-requested { background: var(--info); }
+.bar-fill.badge-awaiting_deposit { background: #c89200; }
+.bar-fill.badge-confirmed { background: var(--ok); }
+.bar-fill.badge-completed { background: #6a55a3; }
+.bar-fill.badge-cancelled { background: #9a8e92; }
+.bar-fill.badge-no_show { background: var(--danger); }
+.bar-fill.bar-warn { background: var(--accent); }
+.bar-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.panel.form h2 { margin-top: 1.75rem; }
+.panel.form h2:first-of-type { margin-top: 0; }

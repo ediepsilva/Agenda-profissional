@@ -86,6 +86,29 @@ final class Auth
         return $u !== null && Permissions::allows($u['role'], $permission);
     }
 
+    /** @param string[] $permissions */
+    public static function canAny(array $permissions): bool
+    {
+        foreach ($permissions as $p) {
+            if (self::can($p)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Escopo de profissional para dados "próprios":
+     * null = pode ver tudo ($fullPermission); int = só a profissional vinculada (0 se não tiver agenda).
+     */
+    public static function professionalScope(string $fullPermission): ?int
+    {
+        if (self::can($fullPermission)) {
+            return null;
+        }
+        return (int) (self::user()['professional_id'] ?? 0);
+    }
+
     public static function logout(): void
     {
         self::$user = null;

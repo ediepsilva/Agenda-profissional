@@ -27,14 +27,26 @@ $businessName = setting('business_name', 'Studio de Maquiagem');
         <small><?= e($user['name']) ?> · <?= e(Permissions::roleLabel($user['role'])) ?></small>
     </div>
     <nav class="sidebar-nav" aria-label="Painel">
-        <?php if (Auth::can('dashboard.view')): ?><a href="<?= e(url('/admin')) ?>"<?= nav_active('/admin') ?>>Visão geral</a><?php endif; ?>
-        <?php if (Auth::can('agenda.view')): ?><a href="<?= e(url('/admin/agenda')) ?>"<?= nav_active('/admin/agenda') ?>>Agenda</a><?php endif; ?>
-        <?php if (Auth::can('bookings.view')): ?><a href="<?= e(url('/admin/reservas')) ?>"<?= nav_active('/admin/reservas') ?>>Reservas</a><?php endif; ?>
-        <?php if (Auth::can('clients.view')): ?><a href="<?= e(url('/admin/clientes')) ?>"<?= nav_active('/admin/clientes') ?>>Clientes</a><?php endif; ?>
-        <?php if (Auth::can('services.manage')): ?><a href="<?= e(url('/admin/servicos')) ?>"<?= nav_active('/admin/servicos') ?>>Serviços</a><?php endif; ?>
-        <?php if (Auth::can('availability.manage')): ?><a href="<?= e(url('/admin/disponibilidade')) ?>"<?= nav_active('/admin/disponibilidade') ?>>Disponibilidade</a><?php endif; ?>
-        <?php if (Auth::can('areas.manage')): ?><a href="<?= e(url('/admin/areas')) ?>"<?= nav_active('/admin/areas') ?>>Áreas atendidas</a><?php endif; ?>
-        <?php if (Auth::can('settings.manage')): ?><a href="<?= e(url('/admin/configuracoes')) ?>"<?= nav_active('/admin/configuracoes') ?>>Configurações</a><?php endif; ?>
+        <?php
+        $nav = [
+            ['/admin', '/admin', 'Visão geral', ['dashboard.view']],
+            ['/admin/agenda', '/admin/agenda', 'Agenda', ['agenda.view', 'agenda.view.own']],
+            ['/admin/reservas', '/admin/reservas', Auth::can('bookings.view') ? 'Reservas' : 'Minhas reservas', ['bookings.view', 'bookings.view.own']],
+            ['/admin/clientes', '/admin/clientes', Auth::can('clients.view') ? 'Clientes' : 'Minhas clientes', ['clients.view', 'clients.view.own']],
+            ['/admin/servicos', '/admin/servicos', 'Serviços', ['services.manage']],
+            ['/admin/disponibilidade', '/admin/disponibilidade', Auth::can('availability.manage') ? 'Disponibilidade' : 'Minha disponibilidade', ['availability.manage', 'availability.manage.own']],
+            ['/admin/equipe', '/admin/equipe', 'Equipe', ['team.view']],
+            ['/admin/areas', '/admin/areas', 'Áreas atendidas', ['areas.manage']],
+            ['/admin/financeiro', '/admin/financeiro/despesas', 'Despesas', ['finance.manage']],
+            ['/admin/relatorios', '/admin/relatorios', Auth::can('reports.view') ? 'Relatórios' : 'Meu desempenho', ['reports.view', 'reports.view.own']],
+            ['/admin/configuracoes', '/admin/configuracoes', 'Configurações', ['settings.manage']],
+        ];
+        foreach ($nav as [$prefix, $href, $label, $perms]):
+            if (!Auth::canAny($perms)) {
+                continue;
+            } ?>
+            <a href="<?= e(url($href)) ?>"<?= nav_active($prefix) ?>><?= e($label) ?></a>
+        <?php endforeach; ?>
         <a href="<?= e(url('/')) ?>" target="_blank" rel="noopener">Ver página pública ↗</a>
     </nav>
     <form method="post" action="<?= e(url('/admin/logout')) ?>" class="sidebar-logout">

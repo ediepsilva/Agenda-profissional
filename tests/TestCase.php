@@ -80,7 +80,7 @@ abstract class DbTestCase extends TestCase
     {
         $pdo = Db::pdo();
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
-        foreach (['booking_status_history', 'booking_allocations', 'bookings', 'clients', 'schedule_blocks', 'availability_rules',
+        foreach (['booking_payments', 'expenses', 'booking_status_history', 'booking_allocations', 'bookings', 'clients', 'schedule_blocks', 'availability_rules',
             'service_areas', 'professional_services', 'services', 'professionals', 'login_attempts', 'rate_limits', 'users'] as $t) {
             $pdo->exec("TRUNCATE TABLE `$t`");
         }

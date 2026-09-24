@@ -15,6 +15,7 @@ final class AreaController extends Controller
         $this->view('admin/areas/index', [
             'pageTitle' => 'Áreas atendidas',
             'areas' => Db::all('SELECT * FROM service_areas ORDER BY active DESC, sort_order, name'),
+            'professionals' => $this->professionals(),
         ]);
     }
 
@@ -71,8 +72,13 @@ final class AreaController extends Controller
         if ($fee === null) {
             $errors['travel_fee'] = 'Taxa inválida.';
         }
+        $pro = (int) $this->input('professional_id', '0');
+        if ($pro && !in_array($pro, array_map(static fn ($p) => (int) $p['id'], $this->professionals()), true)) {
+            $errors['professional_id'] = 'Profissional inválida.';
+        }
         return [[
             'name' => $name,
+            'professional_id' => $pro ?: null,
             'travel_minutes' => $travel,
             'travel_fee_cents' => $fee ?? 0,
             'active' => !empty($_POST['active']) ? 1 : 0,

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Db;
 use App\Core\Response;
 use App\Core\Session;
@@ -16,7 +17,7 @@ final class AvailabilityController extends Controller
 
     public function index(): void
     {
-        $proId = $this->currentProfessionalId();
+        $proId = $this->currentProfessionalId('availability.manage');
         $rules = [];
         foreach (Db::all('SELECT * FROM availability_rules WHERE professional_id = ? ORDER BY weekday, start_time', [$proId ?? 0]) as $r) {
             $rules[(int) $r['weekday']][] = [substr($r['start_time'], 0, 5), substr($r['end_time'], 0, 5)];
@@ -27,7 +28,7 @@ final class AvailabilityController extends Controller
         );
         $this->view('admin/availability/index', [
             'pageTitle' => 'Disponibilidade',
-            'professionals' => $this->professionals(),
+            'professionals' => Auth::can('availability.manage') ? $this->professionals() : [],
             'proId' => $proId,
             'rules' => $rules,
             'blocks' => $blocks,
@@ -36,8 +37,12 @@ final class AvailabilityController extends Controller
 
     public function saveRules(): void
     {
-        $proId = $this->currentProfessionalId();
+        $proId = $this->currentProfessionalId('availability.manage');
         $back = '/admin/disponibilidade?profissional=' . $proId;
+        if (!$proId) {
+            $this->notFound();
+            return;
+        }
         $input = (array) ($_POST['rules'] ?? []);
         $clean = [];
         $errors = [];
@@ -90,8 +95,12 @@ final class AvailabilityController extends Controller
 
     public function addBlock(): void
     {
-        $proId = $this->currentProfessionalId();
+        $proId = $this->currentProfessionalId('availability.manage');
         $back = '/admin/disponibilidade?profissional=' . $proId;
+        if (!$proId) {
+            $this->notFound();
+            return;
+        }
         $allDay = !empty($_POST['all_day']);
         $sd = $this->input('start_date');
         $ed = $this->input('end_date') ?: $sd;
@@ -134,6 +143,10 @@ final class AvailabilityController extends Controller
     public function deleteBlock(string $id): void
     {
         $block = Db::one('SELECT professional_id FROM schedule_blocks WHERE id = ?', [(int) $id]);
+        if (!$block || (!Auth::can('availability.manage') && (int) $block['professional_id'] !== (int) (Auth::user()['professional_id'] ?? 0))) {
+            $this->notFound();
+            return;
+        }
         Db::exec('DELETE FROM schedule_blocks WHERE id = ?', [(int) $id]);
         Session::flash('success', 'Bloqueio removido.');
         Response::redirect('/admin/disponibilidade?profissional=' . ($block['professional_id'] ?? ''));

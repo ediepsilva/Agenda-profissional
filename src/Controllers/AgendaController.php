@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Core\Auth;
 use App\Core\Db;
 use App\Domain\Clock;
 use DateTimeImmutable;
@@ -15,6 +16,11 @@ final class AgendaController extends Controller
         $date = DateTimeImmutable::createFromFormat('!Y-m-d', (string) ($_GET['data'] ?? '')) ?: Clock::now()->setTime(0, 0);
         $proFilter = (int) ($_GET['profissional'] ?? 0);
         $showCancelled = ($_GET['canceladas'] ?? '') === '1';
+        // Maquiadora (escopo "próprio") vê apenas a própria agenda, independentemente do filtro.
+        $scope = Auth::professionalScope('agenda.view');
+        if ($scope !== null) {
+            $proFilter = $scope ?: -1;
+        }
 
         [$from, $to, $prev, $next] = match ($view) {
             'dia' => [$date, $date->modify('+1 day'), $date->modify('-1 day'), $date->modify('+1 day')],
@@ -61,6 +67,15 @@ final class AgendaController extends Controller
             $blockParams
         );
 
+        // Equipe de cada atendimento (eventos podem ter várias profissionais).
+        $team = [];
+        if ($bookings) {
+            $ids = implode(',', array_map(static fn ($b) => (int) $b['id'], $bookings));
+            foreach (Db::all("SELECT a.booking_id, a.professional_id, p.name, p.color FROM booking_allocations a JOIN professionals p ON p.id = a.professional_id WHERE a.booking_id IN ($ids) ORDER BY a.role = 'lead' DESC, a.id") as $a) {
+                $team[(int) $a['booking_id']][] = $a;
+            }
+        }
+
         // Agrupa por dia (bloqueios aparecem em todos os dias que atingem).
         $byDay = [];
         for ($d = $from; $d < $to; $d = $d->modify('+1 day')) {
@@ -91,7 +106,9 @@ final class AgendaController extends Controller
             'byDay' => $byDay,
             'proFilter' => $proFilter,
             'showCancelled' => $showCancelled,
-            'professionals' => $this->professionals(),
+            'professionals' => $scope === null ? $this->professionals() : [],
+            'scoped' => $scope !== null,
+            'team' => $team,
             'today' => Clock::now()->format('Y-m-d'),
         ]);
     }

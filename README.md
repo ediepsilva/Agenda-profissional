@@ -3,9 +3,20 @@
 Aplicação web (responsiva, instalável como PWA) de agendamento e gestão para maquiadora freelancer, preparada para crescer para uma equipe.
 
 - **Página pública** (sem cadastro): serviços, preços iniciais, área atendida, políticas e agendamento com horários realmente livres.
-- **Painel protegido** (login): visão geral, agenda dia/semana/mês, reservas e seus status, clientes, serviços, disponibilidade e bloqueios, áreas atendidas e regras do negócio.
+- **Painel protegido** (login): visão geral, agenda dia/semana/mês (com coluna por profissional), reservas e seus status, eventos com várias profissionais, clientes, serviços, disponibilidade e bloqueios, áreas atendidas, equipe e permissões, pagamentos, despesas, comissões e relatórios.
 
-> Status: **Fase 1 concluída** (ver [Roteiro](#roteiro)).
+> Status: **Fases 1 e 2 concluídas** (ver [Roteiro](#roteiro)).
+
+## Papéis
+
+| Papel | O que pode fazer |
+|---|---|
+| Dona | Tudo, inclusive equipe e configurações. |
+| Gerente | Agenda, reservas, eventos, clientes, serviços, disponibilidade, áreas, financeiro e relatórios. Vê a equipe, mas não a altera. |
+| Maquiadora | Só a própria agenda, as próprias reservas e clientes, a própria disponibilidade e as próprias comissões. Pode marcar os próprios atendimentos como concluídos ou não comparecimento. |
+| Assistente | Somente leitura da agenda e das reservas (sem valores). |
+
+As restrições são aplicadas **no servidor**: um filtro forjado na URL ou um POST manual é ignorado ou recusado.
 
 ## Requisitos
 
@@ -74,6 +85,10 @@ Cobertura das regras críticas:
 - **Conflitos** (integração): mesmo horário, sobreposição parcial, intervalo, bloqueios, deslocamento, cancelamento liberando horário, confirmação rechecando conflito, reagendamento, e **concorrência real** (4 processos disputando o mesmo horário → só 1 consegue).
 - **Permissões e autenticação**: papéis, bloqueio após tentativas, senha com hash, CSRF, acesso negado no servidor mesmo com POST forjado.
 - **Fluxo completo via HTTP** (ponta a ponta): criar serviço → configurar disponibilidade → cliente solicita → dona confirma → horário some e nova tentativa é recusada.
+- **Equipe e distribuição** (Fase 2): atribuição equilibrada, sugestão de profissionais livres, troca com checagem de agenda, áreas exclusivas de uma profissional, regras do cadastro (última dona, próprio papel, e-mail único, senha mínima).
+- **Eventos**: várias profissionais ocupadas ao mesmo tempo, recusa se qualquer uma estiver ocupada, reagendamento da equipe inteira, inclusão/remoção com troca de responsável.
+- **Financeiro**: comissão sem taxa de deslocamento e proporcional à divisão, sinal/saldo, despesas no resultado, totais do relatório, escopo da profissional.
+- **Papéis via HTTP**: maquiadora não vê dados de outra (reservas, agenda, clientes, disponibilidade), gerente não mexe em equipe/configurações, dona cadastra equipe, cria evento, registra sinal (confirmação automática), conclui e exporta o CSV.
 
 ## Estrutura
 
@@ -83,7 +98,7 @@ routes.php               todas as rotas e a permissão exigida por cada uma
 public/                  ÚNICA pasta exposta na web (index.php, CSS, JS, PWA)
 src/Core/                infraestrutura: Db, Router, View, Session, Csrf, Auth, Migrator
 src/Domain/              regras de negócio: AvailabilityCalculator, BookingService,
-                         ClientService, Permissions, Settings, Clock
+                         ClientService, TeamService, FinanceService, Permissions, Settings, Clock
 src/Controllers/         controladores HTTP (finos; delegam ao domínio)
 views/                   templates PHP (layouts público e painel)
 database/migrations/     SQL versionado (aplicado por bin/migrate.php)
@@ -112,5 +127,5 @@ docs/DECISOES.md         decisões técnicas e regras de negócio
 ## Roteiro
 
 - **Fase 1 (concluída):** estrutura multi-profissional, login, serviços, disponibilidade e bloqueios, página pública com agendamento, agenda e gestão de reservas, clientes, interface responsiva, PWA básico.
-- **Fase 2:** equipe e permissões na interface, agenda por profissional, distribuição e sugestão automática, eventos com várias profissionais, comissões e financeiro.
+- **Fase 2 (concluída):** equipe e permissões (dona, gerente, maquiadora, assistente) com escopo "somente os meus", agenda por profissional, distribuição equilibrada e sugestão automática, troca/inclusão de profissionais, eventos com várias profissionais, pagamentos (sinal/saldo), despesas, comissões, resultado por atendimento, relatórios e exportação CSV.
 - **Fase 3:** WhatsApp Business Platform (API oficial), lembretes automáticos, consentimento para campanhas, avaliações, indicações, pagamentos, portfólio com fotos.

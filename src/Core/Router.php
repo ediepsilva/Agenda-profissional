@@ -5,23 +5,24 @@ namespace App\Core;
 
 final class Router
 {
-    /** @var array<int,array{method:string,regex:string,handler:array,permission:?string}> */
+    /** @var array<int,array{method:string,regex:string,handler:array,permission:string|array|null}> */
     private array $routes = [];
 
-    public function get(string $pattern, array $handler, ?string $permission = null): void
+    public function get(string $pattern, array $handler, string|array|null $permission = null): void
     {
         $this->add('GET', $pattern, $handler, $permission);
     }
 
-    public function post(string $pattern, array $handler, ?string $permission = null): void
+    public function post(string $pattern, array $handler, string|array|null $permission = null): void
     {
         $this->add('POST', $pattern, $handler, $permission);
     }
 
     /**
-     * $permission: null = público; 'auth' = qualquer usuário logado; outro = permissão específica.
+     * $permission: null = público; 'auth' = qualquer usuário logado;
+     * string = permissão específica; array = basta ter uma delas.
      */
-    private function add(string $method, string $pattern, array $handler, ?string $permission): void
+    private function add(string $method, string $pattern, array $handler, string|array|null $permission): void
     {
         $regex = preg_replace_callback(
             '#\{(\w+)\}#',
@@ -59,7 +60,7 @@ final class Router
                     Response::redirect('/admin/login');
                     return;
                 }
-                if ($route['permission'] !== 'auth' && !Auth::can($route['permission'])) {
+                if ($route['permission'] !== 'auth' && !Auth::canAny((array) $route['permission'])) {
                     Response::error(403, 'Acesso negado', 'Seu perfil não tem permissão para acessar esta área.');
                     return;
                 }

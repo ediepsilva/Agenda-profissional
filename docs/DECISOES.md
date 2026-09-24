@@ -63,9 +63,38 @@ solicitada ──► aguardando sinal ──► confirmada ──► concluída
 
 Na Fase 1 há apenas links oficiais “clique para conversar” (`wa.me`), acionados manualmente. Os disparos automáticos (confirmação, lembrete, etc.) serão feitos na Fase 3 pela **WhatsApp Business Platform (Cloud API) oficial**, separando mensagens transacionais de campanhas e respeitando o consentimento da cliente. Nenhuma automação não oficial será usada.
 
-## Limitações conhecidas da Fase 1
+## Fase 2 — equipe e permissões
+
+- **Membro da equipe** = agenda (`professionals`) e/ou login (`users`), ligados por `professionals.user_id`. Assim existe maquiadora sem login (parceira eventual) e gerente sem agenda.
+- **Escopo "próprio"**: permissões terminadas em `.own` (maquiadora). O controlador calcula `Auth::professionalScope()` e restringe toda consulta às reservas em que ela está alocada; filtros vindos da URL são ignorados. Rotas aceitam listas de permissões (`[agenda.view, agenda.view.own]`).
+- **Salvaguardas do cadastro**: sempre sobra uma dona ativa; ninguém muda o próprio papel ou desativa o próprio acesso; profissional desativada não é apagada (preserva histórico) e o sistema avisa se ela tinha atendimentos futuros.
+
+## Distribuição de atendimentos
+
+- Sem profissional escolhida (página pública ou "distribuir automaticamente" no painel), o sistema tenta as profissionais que fazem o serviço **em ordem de menor carga** (atendimentos no dia, depois na semana) e fica com a primeira livre — dentro da mesma transação com trava, então continua sem conflitos.
+- **Área exclusiva**: uma área atendida pode pertencer a uma profissional; só ela recebe atendimentos naquela região.
+- **Sugestão**: na página da reserva, a equipe aparece ordenada por (livre, faz o serviço, menor carga). Dali é possível **trocar a responsável** ou **incluir** alguém; ambas as ações conferem a agenda da nova profissional sob trava.
+
+## Eventos
+
+- `bookings.kind = event` com nome, número de pessoas, duração e valor próprios. Cada profissional recebe uma alocação no mesmo período (com deslocamento e intervalo). Se qualquer uma estiver ocupada, o evento é recusado e a mensagem diz quem.
+- Reagendar, confirmar ou incluir/remover profissional sempre revalida **todas** as alocações. Remover a responsável promove a próxima.
+
+## Financeiro
+
+- **Base da comissão** = valor − taxa de deslocamento (a taxa cobre o transporte).
+- **Divisão** (`share_percent`): parte do valor atribuída a cada profissional; começa igual entre elas e pode ser ajustada (precisa somar 100%).
+- **Comissão** (`commission_percent`): copiada do cadastro da profissional no momento da alocação, preservando o histórico se a comissão mudar depois. Dona normalmente usa 0%.
+- **Resultado do atendimento** = valor − comissões − despesas ligadas a ele.
+- **Relatórios**: faturamento = atendimentos concluídos com data no período (competência); recebido = pagamentos com data no período (caixa); resultado = faturamento − comissões − despesas do período. Cliente recorrente = já tinha atendimento concluído antes do período.
+- Registrar o sinal de uma reserva "aguardando sinal" pode confirmá-la automaticamente (com checagem de conflito).
+- Exportação CSV no padrão do Excel brasileiro (`;` e vírgula decimal), com proteção contra injeção de fórmulas.
+
+## Limitações conhecidas
+
 
 - Regra de reagendamento pela cliente (`reschedule_min_hours`) é configurável, mas o reagendamento ainda é feito pela profissional no painel.
 - Portfólio: por enquanto, link para o Instagram; o upload de fotos virá depois.
 - Sem envio automático de mensagens/e-mails (Fase 3).
-- Cadastro de novas profissionais/usuárias pela interface: Fase 2 (a estrutura já existe).
+- Todas as profissionais de um evento ocupam o mesmo período (não há horários individuais por pessoa dentro do evento).
+- Pagamento de comissões às profissionais é controlado fora do sistema (o relatório mostra quanto é devido).

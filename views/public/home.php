@@ -44,6 +44,22 @@
     </div>
 </section>
 
+<?php if (count($team) > 1): ?>
+<section class="section">
+    <div class="wrap">
+        <h2>Equipe</h2>
+        <div class="cards">
+            <?php foreach ($team as $t): ?>
+            <article class="card">
+                <h3><span class="dot" style="background: <?= e($t['color']) ?>"></span> <?= e($t['name']) ?></h3>
+                <?php if ($t['bio']): ?><p><?= nl2br(e($t['bio'])) ?></p><?php endif; ?>
+            </article>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
 <?php if ($areas || setting('service_area_text') || setting('studio_address')): ?>
 <section class="section">
     <div class="wrap narrow">

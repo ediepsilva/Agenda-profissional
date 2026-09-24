@@ -50,15 +50,47 @@
         toggle();
     }
 
-    // Nova reserva no painel.
-    var adminForm = document.getElementById('admin-booking-form');
-    if (adminForm) {
-        var clientSel = document.getElementById('client_id');
-        var newClient = document.getElementById('new-client');
+    // "Nova cliente" x cliente existente.
+    var clientSel = document.querySelector('select[data-toggle-new-client]');
+    var newClient = document.getElementById('new-client');
+    if (clientSel && newClient) {
         var toggleClient = function () { newClient.hidden = clientSel.value !== 'nova'; };
         clientSel.addEventListener('change', toggleClient);
         toggleClient();
+    }
 
+    // Evento: consulta quais profissionais estão livres no período.
+    var eventForm = document.getElementById('event-form');
+    var checkTeam = document.getElementById('check-team');
+    if (eventForm && checkTeam) {
+        checkTeam.addEventListener('click', function () {
+            var v = function (id) { return document.getElementById(id).value; };
+            if (!v('service_id') || !v('date') || !v('time')) {
+                window.alert('Preencha serviço, data e início para consultar a equipe.');
+                return;
+            }
+            var q = new URLSearchParams({
+                servico: v('service_id'), data: v('date'), hora: v('time'), duracao: v('duration_minutes'),
+                local: v('location_type'), area: v('service_area_id')
+            });
+            fetch(eventForm.dataset.suggestUrl + '?' + q, { headers: { Accept: 'application/json' } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    (data.professionals || []).forEach(function (p) {
+                        var row = document.querySelector('#team-pick [data-pro="' + p.id + '"] .pro-status');
+                        if (row) {
+                            row.textContent = p.free ? '· livre (' + p.day_load + ' no dia)' : '· ocupada ou fora do expediente';
+                            row.className = 'small pro-status ' + (p.free ? 'text-ok' : 'text-danger');
+                        }
+                    });
+                })
+                .catch(function () {});
+        });
+    }
+
+    // Nova reserva no painel.
+    var adminForm = document.getElementById('admin-booking-form');
+    if (adminForm) {
         var slotsBox = document.getElementById('admin-slots');
         var timeIn = document.getElementById('time');
         var fields = ['service_id', 'professional_id', 'location_type', 'service_area_id', 'date'];

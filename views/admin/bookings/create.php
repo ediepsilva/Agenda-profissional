@@ -61,6 +61,7 @@ $oldClient = old('client_id', $preClient ?: 'nova');
         <div>
             <label for="professional_id">Profissional</label>
             <select name="professional_id" id="professional_id">
+                <option value="">Distribuir automaticamente (livre e com menor carga)</option>
                 <?php foreach ($professionals as $p): ?><option value="<?= (int) $p['id'] ?>"<?= selected(old('professional_id'), $p['id']) ?>><?= e($p['name']) ?></option><?php endforeach; ?>
             </select>
         </div>

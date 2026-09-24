@@ -27,6 +27,7 @@ putenv('APP_ENV=testing');
 require dirname(__DIR__) . '/bootstrap.php';
 require __DIR__ . '/TestCase.php';
 require __DIR__ . '/Fixtures.php';
+require __DIR__ . '/Http.php';
 
 use App\Core\Migrator;
 

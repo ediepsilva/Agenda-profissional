@@ -62,6 +62,15 @@ final class DevSeeder
             $serviceIds[] = $id;
         }
 
+        // Segunda profissional (sem login) para demonstrar a equipe, com comissão de 40%.
+        $pro2 = Db::insert('professionals', ['name' => 'Júlia (maquiadora parceira)', 'color' => '#5b7fa6', 'commission_percent' => 40]);
+        foreach ([2, 3, 4, 5, 6] as $wd) {
+            Db::insert('availability_rules', ['professional_id' => $pro2, 'weekday' => $wd, 'start_time' => '10:00:00', 'end_time' => '19:00:00']);
+        }
+        foreach ([$serviceIds[0], $serviceIds[2]] as $sid) {
+            Db::insert('professional_services', ['professional_id' => $pro2, 'service_id' => $sid]);
+        }
+
         Db::insert('service_areas', ['name' => 'Centro e bairros próximos', 'travel_minutes' => 20, 'travel_fee_cents' => 0, 'sort_order' => 1]);
         Db::insert('service_areas', ['name' => 'Zona Sul', 'travel_minutes' => 40, 'travel_fee_cents' => 4000, 'sort_order' => 2]);
         Db::insert('service_areas', ['name' => 'Região metropolitana', 'travel_minutes' => 60, 'travel_fee_cents' => 8000, 'sort_order' => 3]);

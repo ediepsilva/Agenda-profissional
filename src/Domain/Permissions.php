@@ -5,7 +5,8 @@ namespace App\Domain;
 
 /**
  * Papéis e permissões. Verificados no servidor em cada rota protegida.
- * Permissões terminadas em ".own" restringem à própria agenda (usadas na Fase 2).
+ * Permissões terminadas em ".own" restringem os dados à própria profissional
+ * (a restrição é aplicada nos controladores via escopo).
  */
 final class Permissions
 {
@@ -16,14 +17,23 @@ final class Permissions
         'assistant' => 'Assistente',
     ];
 
+    public const ROLE_DESCRIPTIONS = [
+        'owner' => 'Acesso total, incluindo equipe e configurações.',
+        'manager' => 'Gerencia agenda, reservas, clientes, serviços e financeiro. Não altera equipe nem configurações.',
+        'artist' => 'Vê apenas a própria agenda, as próprias reservas e clientes, e as próprias comissões.',
+        'assistant' => 'Somente leitura da agenda e das reservas.',
+    ];
+
     private const MAP = [
         'owner' => ['*'],
         'manager' => [
             'dashboard.view', 'agenda.view', 'bookings.view', 'bookings.manage',
             'clients.view', 'clients.manage', 'services.manage', 'availability.manage', 'areas.manage',
+            'team.view', 'finance.manage', 'reports.view',
         ],
         'artist' => [
-            'dashboard.view', 'agenda.view.own', 'bookings.view.own', 'availability.manage.own', 'clients.view',
+            'dashboard.view', 'agenda.view.own', 'bookings.view.own', 'bookings.status.own',
+            'availability.manage.own', 'clients.view.own', 'reports.view.own',
         ],
         'assistant' => [
             'dashboard.view', 'agenda.view', 'bookings.view',
