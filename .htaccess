@@ -1,0 +1,7 @@
+# Somente a pasta public/ é exposta. Qualquer outro caminho (inclusive .env,
+# código-fonte e migrações) é redirecionado para public/.
+Options -Indexes
+RewriteEngine On
+RewriteCond %{REQUEST_URI}::$1 ^(.*?/)(.*)::\2$
+RewriteRule ^(.*)$ - [E=APPBASE:%1]
+RewriteRule ^(?!public/)(.*)$ %{ENV:APPBASE}public/$1 [R=302,L]

@@ -1,0 +1,13 @@
+Options -Indexes
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]
+
+<IfModule mod_headers.c>
+    <FilesMatch "sw\.js$">
+        Header set Cache-Control "no-cache"
+        Header set Service-Worker-Allowed "/"
+    </FilesMatch>
+</IfModule>
+
+AddType application/manifest+json .webmanifest

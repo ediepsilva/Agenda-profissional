@@ -1,0 +1,5 @@
+.env
+/storage/logs/*
+!/storage/logs/.gitkeep
+.vscode/*
+!.vscode/extensions.json
