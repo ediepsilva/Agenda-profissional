@@ -22,7 +22,7 @@ final class SettingsController extends Controller
         $errors = [];
         $values = [];
         foreach (Settings::NUMERIC as $key => [$min, $max]) {
-            $raw = $key === 'hold_pending_requests' ? (!empty($_POST[$key]) ? '1' : '0') : $this->input($key);
+            $raw = in_array($key, Settings::BOOL, true) ? (!empty($_POST[$key]) ? '1' : '0') : $this->input($key);
             if (!preg_match('/^\d+$/', $raw) || (int) $raw < $min || (int) $raw > $max) {
                 $errors[$key] = "Valor entre $min e $max.";
                 continue;

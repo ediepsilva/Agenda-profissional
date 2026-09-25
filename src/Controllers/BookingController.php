@@ -10,6 +10,7 @@ use App\Core\Session;
 use App\Domain\BookingService;
 use App\Domain\Clock;
 use App\Domain\FinanceService;
+use App\Domain\OnlinePaymentService;
 use App\Domain\ValidationException;
 use DomainException;
 
@@ -214,7 +215,29 @@ final class BookingController extends Controller
             'finance' => $finance,
             'ownCommission' => $finance === null ? $this->ownCommission($b, $allocations) : null,
             'publicLink' => absolute_url('/reserva/' . $b['public_code']),
+            'messages' => Auth::can('messages.manage') ? Db::all('SELECT m.*, t.label FROM messages m JOIN message_templates t ON t.template_key = m.template_key WHERE m.booking_id = ? ORDER BY m.id DESC', [$b['id']]) : [],
+            'onlinePayments' => $finance !== null && (new OnlinePaymentService())->available(),
+            'intents' => $finance !== null ? Db::all('SELECT * FROM payment_intents WHERE booking_id = ? ORDER BY id DESC LIMIT 10', [$b['id']]) : [],
+            'paymentLink' => Session::get('_payment_link'),
         ]);
+        Session::forget('_payment_link');
+    }
+
+    /** Gera o link de pagamento online para enviar à cliente. */
+    public function paymentLink(string $id): void
+    {
+        $b = (new BookingService())->find((int) $id);
+        if (!$b) {
+            $this->notFound();
+            return;
+        }
+        try {
+            Session::set('_payment_link', (new OnlinePaymentService())->checkoutUrl($b));
+            Session::flash('success', 'Link de pagamento gerado. Copie e envie para a cliente.');
+        } catch (DomainException $e) {
+            Session::flash('error', $e->getMessage());
+        }
+        Response::redirect('/admin/reservas/' . (int) $id);
     }
 
     public function status(string $id): void

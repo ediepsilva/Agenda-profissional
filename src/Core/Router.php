@@ -19,10 +19,19 @@ final class Router
     }
 
     /**
+     * POST de serviços externos (webhooks): sem token CSRF e sem sessão de usuário.
+     * A autenticidade é verificada pelo controlador (assinatura HMAC do provedor).
+     */
+    public function webhook(string $pattern, array $handler): void
+    {
+        $this->add('POST', $pattern, $handler, null, false);
+    }
+
+    /**
      * $permission: null = público; 'auth' = qualquer usuário logado;
      * string = permissão específica; array = basta ter uma delas.
      */
-    private function add(string $method, string $pattern, array $handler, string|array|null $permission): void
+    private function add(string $method, string $pattern, array $handler, string|array|null $permission, bool $csrf = true): void
     {
         $regex = preg_replace_callback(
             '#\{(\w+)\}#',
@@ -30,7 +39,7 @@ final class Router
             rtrim($pattern, '/') ?: '/'
         );
         $regex = '#^' . $regex . '$#';
-        $this->routes[] = compact('method', 'regex', 'handler', 'permission');
+        $this->routes[] = compact('method', 'regex', 'handler', 'permission', 'csrf');
     }
 
     public function dispatch(string $method, string $path): void
@@ -47,7 +56,7 @@ final class Router
                 continue;
             }
 
-            if ($method === 'POST' && !Csrf::valid($_POST['_csrf'] ?? null)) {
+            if ($method === 'POST' && $route['csrf'] && !Csrf::valid($_POST['_csrf'] ?? null)) {
                 Response::error(419, 'Sessão expirada', 'O formulário expirou. Volte, recarregue a página e tente novamente.');
                 return;
             }

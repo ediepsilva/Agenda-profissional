@@ -7,6 +7,7 @@ $oldLocation = old('location_type', 'studio');
 <div class="wrap narrow">
     <h1>Agendar horário</h1>
     <p class="muted">Leva menos de 2 minutos. Você não precisa criar conta.</p>
+    <?php if ($ref): ?><div class="alert alert-info">Você chegou por indicação de uma cliente. Bem-vinda! 💕</div><?php endif; ?>
 
     <?php if (isset($errors['form'])): ?><div class="alert alert-error" role="alert"><?= e($errors['form']) ?></div><?php endif; ?>
     <?php if ($errors && !isset($errors['form'])): ?>
@@ -115,6 +116,12 @@ $oldLocation = old('location_type', 'studio');
                 <span>Concordo com o uso dos meus dados para organizar este atendimento, conforme a <a href="<?= e(url('/privacidade')) ?>" target="_blank">política de privacidade</a>.</span>
             </label>
             <?= field_error($errors, 'privacy') ?>
+            <label class="check">
+                <input type="checkbox" name="marketing" value="1"<?= checked((bool) old('marketing')) ?>>
+                <span>Quero receber novidades e ofertas pelo WhatsApp <span class="muted">(opcional — você pode cancelar quando quiser)</span>.</span>
+            </label>
+            <?php if (old('ref', $ref)): ?><input type="hidden" name="ref" value="<?= e(old('ref', $ref)) ?>"><?php endif; ?>
+            <?php if (old('origem', $origem)): ?><input type="hidden" name="origem" value="<?= e(old('origem', $origem)) ?>"><?php endif; ?>
         </fieldset>
 
         <div class="summary" id="summary" hidden></div>

@@ -343,6 +343,7 @@ final class BookingService
             }
 
             $clientId = $clientData ? (int) $clientData['id'] : ClientService::findOrCreate($in, $isPublic);
+            [$referrerId, $origin] = $this->acquisition($in, $clientId, $isPublic);
             $price = (int) $service['price_cents'] + $loc['fee'];
             $deposit = $service['deposit_cents'] !== null
                 ? (int) $service['deposit_cents']
@@ -366,10 +367,15 @@ final class BookingService
                 'deposit_cents' => $deposit,
                 'client_notes' => $notes !== '' ? $notes : null,
                 'channel' => $channel,
+                'referred_by_client_id' => $referrerId,
+                'origin' => $origin,
                 'created_by' => $userId,
             ]);
             $this->insertAllocations($bookingId, [(int) $chosen['id']], $start, $duration, $loc['travel'], $buffer);
             $this->history($bookingId, null, $status, $userId, $isPublic ? 'Solicitação pela página pública' : 'Lançada no painel');
+            if ($status === 'confirmed') {
+                (new MessageService())->onStatusChanged($bookingId, 'requested', 'confirmed');
+            }
 
             return $this->find($bookingId);
         });
@@ -480,6 +486,9 @@ final class BookingService
             ]);
             $this->insertAllocations($bookingId, $proIds, $start, $duration, $loc['travel'], $buffer);
             $this->history($bookingId, null, $status, $userId, 'Evento criado com ' . count($proIds) . ' profissional(is)');
+            if ($status === 'confirmed') {
+                (new MessageService())->onStatusChanged($bookingId, 'requested', 'confirmed');
+            }
             return $this->find($bookingId);
         });
     }
@@ -520,6 +529,8 @@ final class BookingService
             }
             Db::update('bookings', $data, 'id = ?', [$bookingId]);
             $this->history($bookingId, $from, $to, $userId, $note);
+            // Outbox: a mensagem é gravada na mesma transação da mudança de status.
+            (new MessageService())->onStatusChanged($bookingId, $from, $to);
         });
     }
 
@@ -558,6 +569,7 @@ final class BookingService
                 'block_start' => $b0->format('Y-m-d H:i:s'),
                 'block_end' => $b1->format('Y-m-d H:i:s'),
             ], 'booking_id = ?', [$bookingId]);
+            (new MessageService())->onRescheduled($bookingId);
             $this->history($bookingId, $b['status'], $b['status'], $userId, 'Reagendada de ' . datetime_br($b['starts_at']) . ' para ' . datetime_br($start));
         });
     }
@@ -900,6 +912,28 @@ final class BookingService
             return [$c, $c ? [] : ['client_id' => 'Cliente não encontrada.']];
         }
         return [null, ClientService::validate($in, requirePrivacy: $isPublic)];
+    }
+
+    /**
+     * Captação: indicação (código ?ref=), origem do link (?origem=) e consentimento para campanhas.
+     * @return array{0:?int,1:?string} [id da cliente que indicou, origem]
+     */
+    private function acquisition(array $in, int $clientId, bool $isPublic): array
+    {
+        $referrerId = ReferralService::resolve($in['ref'] ?? null);
+        if ($referrerId === $clientId) {
+            $referrerId = null; // ninguém indica a si mesma
+        }
+        if ($referrerId) {
+            Db::exec('UPDATE clients SET referred_by_client_id = ? WHERE id = ? AND referred_by_client_id IS NULL', [$referrerId, $clientId]);
+            Db::exec("UPDATE clients SET source = 'indicacao' WHERE id = ? AND source IS NULL", [$clientId]);
+        }
+        $origin = strtolower(trim((string) ($in['origem'] ?? '')));
+        $origin = preg_match('/^[a-z0-9_-]{1,40}$/', $origin) ? $origin : null;
+        if ($isPublic && !empty($in['marketing'])) {
+            ConsentService::set($clientId, true, 'formulario_publico', 'Marcou a opção ao agendar', null, client_ip());
+        }
+        return [$referrerId, $origin];
     }
 
     private function initialStatus(array $in): string

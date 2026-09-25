@@ -19,11 +19,18 @@ final class Settings
         'cancellation_min_hours' => [0, 720],
         'reschedule_min_hours' => [0, 720],
         'hold_pending_requests' => [0, 1],
+        'messaging_enabled' => [0, 1],
+        'reviews_auto_approve' => [0, 1],
+        'online_payment_enabled' => [0, 1],
     ];
+
+    /** Chaves liga/desliga (checkbox na tela). */
+    public const BOOL = ['hold_pending_requests', 'messaging_enabled', 'reviews_auto_approve', 'online_payment_enabled'];
 
     public const TEXT = [
         'business_name', 'tagline', 'about', 'city', 'studio_address', 'whatsapp', 'instagram',
         'service_area_text', 'deposit_policy', 'cancellation_policy', 'reschedule_policy',
+        'referral_reward_text', 'pix_key', 'pix_holder',
     ];
 
     public static function all(): array

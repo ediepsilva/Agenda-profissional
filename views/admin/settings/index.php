@@ -46,6 +46,28 @@ $num = static function (string $k, string $label, string $hint = '') use ($v, $e
     </section>
 
     <section class="panel">
+        <h2>Mensagens, avaliações e pagamentos</h2>
+        <?php foreach ([
+            'messaging_enabled' => 'Enviar avisos automáticos pelo WhatsApp (confirmação, lembrete, orientações, agradecimento)',
+            'reviews_auto_approve' => 'Publicar avaliações automaticamente (sem aprovação prévia)',
+            'online_payment_enabled' => 'Oferecer pagamento online do sinal (quando o Mercado Pago estiver configurado)',
+        ] as $k => $label): ?>
+        <label class="check">
+            <input type="hidden" name="<?= $k ?>" value="0">
+            <input type="checkbox" name="<?= $k ?>" value="1"<?= checked($v($k) === '1') ?>>
+            <?= e($label) ?>
+        </label>
+        <?php endforeach; ?>
+        <div class="grid-2">
+            <div><label for="pix_key">Chave Pix (pagamento manual do sinal)</label><input type="text" id="pix_key" name="pix_key" maxlength="120" value="<?= e($v('pix_key')) ?>"></div>
+            <div><label for="pix_holder">Nome do titular do Pix</label><input type="text" id="pix_holder" name="pix_holder" maxlength="120" value="<?= e($v('pix_holder')) ?>"></div>
+        </div>
+        <label for="referral_reward_text">Recompensa por indicação (exibida às clientes)</label>
+        <textarea id="referral_reward_text" name="referral_reward_text" rows="2"><?= e($v('referral_reward_text')) ?></textarea>
+        <p class="muted small">Horários dos lembretes e textos das mensagens: menu <a href="<?= e(url('/admin/mensagens')) ?>#modelos">Mensagens</a>.</p>
+    </section>
+
+    <section class="panel">
         <h2>Políticas exibidas às clientes</h2>
         <label for="deposit_policy">Sinal</label>
         <textarea id="deposit_policy" name="deposit_policy" rows="2"><?= e($v('deposit_policy')) ?></textarea>

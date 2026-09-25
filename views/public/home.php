@@ -3,6 +3,8 @@
         <p class="eyebrow">Maquiagem artística</p>
         <h1><?= e(setting('business_name')) ?></h1>
         <p class="lead"><?= e(setting('tagline')) ?></p>
+        <?php if ($referred): ?><p class="referral-banner">Você chegou por indicação de uma cliente. Bem-vinda! 💕</p><?php endif; ?>
+        <?php if ($reviewStats['count'] > 0): ?><p class="muted"><span class="stars-static">★</span> <?= e(number_format($reviewStats['average'], 1, ',', '')) ?> de 5 em <?= $reviewStats['count'] ?> avaliação(ões)</p><?php endif; ?>
         <div class="hero-actions">
             <a class="btn btn-primary btn-lg" href="<?= e(url('/agendar')) ?>">Agendar horário</a>
             <a class="btn btn-ghost btn-lg" href="#servicos">Ver serviços</a>
@@ -43,6 +45,25 @@
         <?php endif; ?>
     </div>
 </section>
+
+<?php if ($reviews): ?>
+<section class="section">
+    <div class="wrap">
+        <h2>Avaliações</h2>
+        <p class="rating-summary"><span class="stars-static" aria-hidden="true"><?= str_repeat('★', (int) round($reviewStats['average'])) ?></span>
+            <strong><?= e(number_format($reviewStats['average'], 1, ',', '')) ?></strong> de 5 · <?= $reviewStats['count'] ?> avaliação(ões)</p>
+        <div class="cards">
+            <?php foreach ($reviews as $r): ?>
+            <figure class="card review-card">
+                <div class="stars-static" aria-label="<?= (int) $r['rating'] ?> de 5 estrelas"><?= str_repeat('★', (int) $r['rating']) ?><span class="stars-off"><?= str_repeat('★', 5 - (int) $r['rating']) ?></span></div>
+                <?php if ($r['comment']): ?><blockquote><?= nl2br(e($r['comment'])) ?></blockquote><?php endif; ?>
+                <figcaption><strong><?= e($r['display_name']) ?></strong> · <span class="muted small"><?= e($r['service_name']) ?></span></figcaption>
+            </figure>
+            <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
 
 <?php if (count($team) > 1): ?>
 <section class="section">

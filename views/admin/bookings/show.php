@@ -150,6 +150,24 @@ $id = (int) $b['id'];
             <button class="btn btn-ghost btn-sm" type="submit">Salvar divisão</button>
         </form>
 
+        <h3>Pagamento online</h3>
+        <?php if ($paymentLink): ?>
+            <div class="copy-row">
+                <input type="text" readonly id="pay-link" value="<?= e($paymentLink) ?>" aria-label="Link de pagamento">
+                <button type="button" class="btn btn-ghost btn-sm" data-copy="#pay-link">Copiar</button>
+            </div>
+            <p><a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="<?= e(whatsapp_link($b['client_phone'], 'Olá, ' . strtok($b['client_name'], ' ') . '! Segue o link para pagamento: ' . $paymentLink)) ?>">Enviar pelo WhatsApp</a></p>
+        <?php elseif ($onlinePayments): ?>
+            <form method="post" action="<?= e(url("/admin/reservas/$id/link-pagamento")) ?>"><?= csrf_field() ?><button class="btn btn-ghost btn-sm" type="submit">Gerar link de pagamento (Pix/cartão)</button></form>
+        <?php else: ?>
+            <p class="muted small">Pagamento online desativado ou não configurado (Mercado Pago). A cliente vê a chave Pix manual, se cadastrada em Configurações.</p>
+        <?php endif; ?>
+        <?php if ($intents): ?>
+            <ul class="money-list">
+                <?php foreach ($intents as $pi): ?><li><span><?= e(datetime_br($pi['created_at'])) ?> · <?= e(money((int) $pi['amount_cents'])) ?> · <?= e(['pending' => 'aguardando', 'approved' => 'aprovado', 'rejected' => 'recusado', 'cancelled' => 'cancelado'][$pi['status']]) ?></span></li><?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
         <h3>Pagamentos</h3>
         <?php if ($f['payments']): ?>
         <ul class="money-list">
@@ -246,6 +264,18 @@ $id = (int) $b['id'];
             </form>
             <?php else: ?><p><?= nl2br(e($b['internal_notes'] ?: '—')) ?></p><?php endif; ?>
         </section>
+
+        <?php if ($messages): ?>
+        <section class="panel">
+            <h2>Mensagens</h2>
+            <ul class="money-list">
+                <?php foreach ($messages as $m): ?>
+                    <li><span><strong><?= e($m['label']) ?></strong> · <?= e(App\Domain\MessageService::STATUS_LABELS[$m['status']]) ?><?= $m['provider'] === 'simulado' ? ' (simulado)' : '' ?> · <span class="muted small"><?= e(datetime_br($m['sent_at'] ?: $m['scheduled_at'])) ?></span></span></li>
+                <?php endforeach; ?>
+            </ul>
+            <p class="small"><a href="<?= e(url('/admin/mensagens')) ?>">Ver fila de mensagens →</a></p>
+        </section>
+        <?php endif; ?>
 
         <section class="panel">
             <h2>Histórico</h2>

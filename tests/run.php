@@ -23,11 +23,16 @@ if (!str_ends_with($testDb, '_test')) {
 }
 putenv("DB_NAME=$testDb");
 putenv('APP_ENV=testing');
+foreach (['WHATSAPP_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID', 'WHATSAPP_APP_SECRET', 'WHATSAPP_VERIFY_TOKEN', 'MERCADOPAGO_ACCESS_TOKEN', 'MERCADOPAGO_WEBHOOK_SECRET'] as $k) {
+    putenv("$k=");
+}
+putenv('APP_URL=http://127.0.0.1:8099');
 
 require dirname(__DIR__) . '/bootstrap.php';
 require __DIR__ . '/TestCase.php';
 require __DIR__ . '/Fixtures.php';
 require __DIR__ . '/Http.php';
+require __DIR__ . '/FakeHttp.php';
 
 use App\Core\Migrator;
 

@@ -38,6 +38,9 @@ $businessName = setting('business_name', 'Studio de Maquiagem');
             ['/admin/equipe', '/admin/equipe', 'Equipe', ['team.view']],
             ['/admin/areas', '/admin/areas', 'Áreas atendidas', ['areas.manage']],
             ['/admin/financeiro', '/admin/financeiro/despesas', 'Despesas', ['finance.manage']],
+            ['/admin/mensagens', '/admin/mensagens', 'Mensagens', ['messages.manage']],
+            ['/admin/campanhas', '/admin/campanhas', 'Campanhas', ['campaigns.manage']],
+            ['/admin/captacao', '/admin/captacao', 'Captação', ['growth.view']],
             ['/admin/relatorios', '/admin/relatorios', Auth::can('reports.view') ? 'Relatórios' : 'Meu desempenho', ['reports.view', 'reports.view.own']],
             ['/admin/configuracoes', '/admin/configuracoes', 'Configurações', ['settings.manage']],
         ];

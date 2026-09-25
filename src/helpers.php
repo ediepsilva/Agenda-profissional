@@ -14,6 +14,10 @@ function e(mixed $value): string
 function base_path_url(): string
 {
     static $base = null;
+    // Linha de comando (worker, testes): não há subpasta de servidor web; links usam APP_URL.
+    if (PHP_SAPI === 'cli') {
+        return '';
+    }
     if ($base === null) {
         // No Windows, dirname('/index.php') devolve "\": normaliza as barras depois do dirname.
         $script = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
@@ -27,8 +31,15 @@ function base_path_url(): string
 
 function url(string $path = '/', array $query = []): string
 {
+    // Querystring/âncora já presentes em $path são preservadas (só o caminho é codificado).
+    $suffix = '';
+    $cut = strcspn($path, '?#');
+    if ($cut < strlen($path)) {
+        $suffix = substr($path, $cut);
+        $path = substr($path, 0, $cut);
+    }
     $u = base_path_url() . '/' . ltrim($path, '/');
-    $u = implode('/', array_map('rawurlencode', explode('/', $u)));
+    $u = implode('/', array_map('rawurlencode', explode('/', $u))) . $suffix;
     if ($query) {
         $u .= '?' . http_build_query($query);
     }

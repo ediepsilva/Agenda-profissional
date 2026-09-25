@@ -3,3 +3,4 @@
 !/storage/logs/.gitkeep
 .vscode/*
 !.vscode/extensions.json
+/storage/worker.lock

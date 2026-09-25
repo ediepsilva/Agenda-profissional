@@ -7,14 +7,18 @@ use App\Controllers\AreaController;
 use App\Controllers\AuthController;
 use App\Controllers\AvailabilityController;
 use App\Controllers\BookingController;
+use App\Controllers\CampaignController;
 use App\Controllers\ClientController;
 use App\Controllers\DashboardController;
 use App\Controllers\FinanceController;
+use App\Controllers\GrowthController;
+use App\Controllers\MessageController;
 use App\Controllers\PublicController;
 use App\Controllers\ReportController;
 use App\Controllers\ServiceController;
 use App\Controllers\SettingsController;
 use App\Controllers\TeamController;
+use App\Controllers\WebhookController;
 use App\Core\Router;
 
 $r = new Router();
@@ -26,7 +30,18 @@ $r->post('/agendar', [PublicController::class, 'bookingSubmit']);
 $r->get('/reserva/{code}', [PublicController::class, 'bookingStatus']);
 $r->post('/reserva/{code}/cancelar', [PublicController::class, 'bookingCancel']);
 $r->get('/privacidade', [PublicController::class, 'privacy']);
+$r->post('/reserva/{code}/pagar', [PublicController::class, 'pay']);
+$r->get('/pagamento/retorno/{code}', [PublicController::class, 'paymentReturn']);
+$r->get('/avaliar/{code}', [PublicController::class, 'reviewForm']);
+$r->post('/avaliar/{code}', [PublicController::class, 'reviewSubmit']);
+$r->get('/preferencias/{token}', [PublicController::class, 'preferences']);
+$r->post('/preferencias/{token}', [PublicController::class, 'preferencesSave']);
 $r->get('/api/horarios', [ApiController::class, 'slots']);
+
+// Webhooks (sem CSRF; autenticados por assinatura HMAC do provedor)
+$r->get('/webhooks/whatsapp', [WebhookController::class, 'whatsappVerify']);
+$r->webhook('/webhooks/whatsapp', [WebhookController::class, 'whatsapp']);
+$r->webhook('/webhooks/mercadopago', [WebhookController::class, 'mercadopago']);
 $r->get('/api/dias', [ApiController::class, 'days']);
 
 // Autenticação
@@ -94,6 +109,21 @@ $r->post('/admin/clientes', [ClientController::class, 'store'], 'clients.manage'
 $r->get('/admin/clientes/{id}', [ClientController::class, 'show'], ['clients.view', 'clients.view.own']);
 $r->get('/admin/clientes/{id}/editar', [ClientController::class, 'edit'], 'clients.manage');
 $r->post('/admin/clientes/{id}', [ClientController::class, 'update'], 'clients.manage');
+
+$r->post('/admin/reservas/{id}/link-pagamento', [BookingController::class, 'paymentLink'], 'finance.manage');
+$r->post('/admin/clientes/{id}/consentimento', [ClientController::class, 'consent'], 'clients.manage');
+
+$r->get('/admin/mensagens', [MessageController::class, 'index'], 'messages.manage');
+$r->post('/admin/mensagens/processar', [MessageController::class, 'process'], 'messages.manage');
+$r->post('/admin/mensagens/modelos/{key}', [MessageController::class, 'updateTemplate'], 'settings.manage');
+$r->post('/admin/mensagens/{id}/cancelar', [MessageController::class, 'cancel'], 'messages.manage');
+$r->post('/admin/mensagens/{id}/reenviar', [MessageController::class, 'retry'], 'messages.manage');
+$r->get('/admin/campanhas', [CampaignController::class, 'index'], 'campaigns.manage');
+$r->post('/admin/campanhas', [CampaignController::class, 'store'], 'campaigns.manage');
+$r->post('/admin/campanhas/{id}/enviar', [CampaignController::class, 'queue'], 'campaigns.manage');
+$r->post('/admin/campanhas/{id}/excluir', [CampaignController::class, 'destroy'], 'campaigns.manage');
+$r->get('/admin/captacao', [GrowthController::class, 'index'], 'growth.view');
+$r->post('/admin/avaliacoes/{id}', [GrowthController::class, 'moderate'], 'reviews.manage');
 
 $r->get('/admin/configuracoes', [SettingsController::class, 'index'], 'settings.manage');
 $r->post('/admin/configuracoes', [SettingsController::class, 'save'], 'settings.manage');

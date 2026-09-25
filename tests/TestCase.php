@@ -21,6 +21,10 @@ abstract class TestCase
     public function tearDown(): void
     {
         Clock::freeze(null);
+        \App\Integrations\Integrations::useHttpClient(null);
+        foreach (['WHATSAPP_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID', 'MERCADOPAGO_ACCESS_TOKEN', 'MERCADOPAGO_WEBHOOK_SECRET'] as $k) {
+            putenv("$k="); // vazio = não configurado (nunca cai no .env durante os testes)
+        }
     }
 
     protected function assertTrue(mixed $v, string $msg = ''): void
@@ -80,13 +84,14 @@ abstract class DbTestCase extends TestCase
     {
         $pdo = Db::pdo();
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 0');
-        foreach (['booking_payments', 'expenses', 'booking_status_history', 'booking_allocations', 'bookings', 'clients', 'schedule_blocks', 'availability_rules',
+        foreach (['messages', 'campaigns', 'reviews', 'payment_intents', 'consent_log', 'booking_payments', 'expenses', 'booking_status_history', 'booking_allocations', 'bookings', 'clients', 'schedule_blocks', 'availability_rules',
             'service_areas', 'professional_services', 'services', 'professionals', 'login_attempts', 'rate_limits', 'users'] as $t) {
-            $pdo->exec("TRUNCATE TABLE `$t`");
+            $pdo->exec("DELETE FROM `$t`"); // DELETE é bem mais rápido que TRUNCATE em tabelas pequenas
         }
         $pdo->exec('SET FOREIGN_KEY_CHECKS = 1');
         $defaults = ['min_advance_hours' => '24', 'max_advance_days' => '90', 'slot_step_minutes' => '30',
-            'buffer_minutes' => '30', 'hold_pending_requests' => '1', 'deposit_percent' => '30', 'cancellation_min_hours' => '48'];
+            'buffer_minutes' => '30', 'hold_pending_requests' => '1', 'deposit_percent' => '30', 'cancellation_min_hours' => '48',
+            'messaging_enabled' => '1', 'reviews_auto_approve' => '0', 'online_payment_enabled' => '1'];
         foreach ($defaults as $k => $v) {
             Settings::set($k, $v);
         }

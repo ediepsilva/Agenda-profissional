@@ -19,7 +19,7 @@ final class Permissions
 
     public const ROLE_DESCRIPTIONS = [
         'owner' => 'Acesso total, incluindo equipe e configurações.',
-        'manager' => 'Gerencia agenda, reservas, clientes, serviços e financeiro. Não altera equipe nem configurações.',
+        'manager' => 'Gerencia agenda, reservas, clientes, serviços, financeiro, mensagens, campanhas e avaliações. Não altera equipe nem configurações.',
         'artist' => 'Vê apenas a própria agenda, as próprias reservas e clientes, e as próprias comissões.',
         'assistant' => 'Somente leitura da agenda e das reservas.',
     ];
@@ -30,6 +30,7 @@ final class Permissions
             'dashboard.view', 'agenda.view', 'bookings.view', 'bookings.manage',
             'clients.view', 'clients.manage', 'services.manage', 'availability.manage', 'areas.manage',
             'team.view', 'finance.manage', 'reports.view',
+            'messages.manage', 'campaigns.manage', 'reviews.manage', 'growth.view',
         ],
         'artist' => [
             'dashboard.view', 'agenda.view.own', 'bookings.view.own', 'bookings.status.own',

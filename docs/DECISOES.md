@@ -90,11 +90,23 @@ Na Fase 1 há apenas links oficiais “clique para conversar” (`wa.me`), acion
 - Registrar o sinal de uma reserva "aguardando sinal" pode confirmá-la automaticamente (com checagem de conflito).
 - Exportação CSV no padrão do Excel brasileiro (`;` e vírgula decimal), com proteção contra injeção de fórmulas.
 
-## Limitações conhecidas
+## Fase 3 — mensagens, captação e pagamentos
 
+- **Fila de saída (outbox)**: toda mensagem é gravada em `messages` na mesma transação da mudança que a originou (ex.: confirmação). O envio acontece depois, pelo worker. Se a API cair, nada se perde; tentativas com espera crescente (até 3) para erros temporários; erros definitivos (modelo inexistente, número inválido) falham na hora.
+- **Sem duplicidade**: `dedupe_key` única por aviso (ex.: lembrete da reserva 10 para o horário X). Reagendar cancela os lembretes pendentes; os novos têm outra chave.
+- **Checagem no envio**: antes de enviar, o sistema confere de novo o status da reserva e o consentimento da cliente — uma mudança entre o enfileiramento e o envio impede a mensagem ("Não enviada").
+- **Transacional × marketing**: modelos e categorias separados. Campanha só é enfileirada para quem tem `marketing_opt_in = 1` e é reconferida no envio. O consentimento nunca vem pré-marcado e desmarcar a opção num novo agendamento não revoga (só ações explícitas revogam: página de preferências, "SAIR", painel).
+- **Provedor plugável**: `Integrations` escolhe o provedor pelo `.env` (Cloud API real ou simulado). Os testes injetam um cliente HTTP falso e verificam o formato exato das chamadas.
+- **Pagamento online**: disponível só depois que a profissional aceita a reserva (o pagamento nunca pula a aprovação). A notificação do gateway precisa de assinatura válida; o valor e o status vêm da consulta à API; `booking_payments.external_id` único garante registro único mesmo com notificações repetidas.
+- **Avaliações**: pelo link secreto da própria reserva, uma por atendimento concluído; publicadas com primeiro nome + inicial; moderação opcional.
+- **Indicação**: código curto por cliente (sem caracteres ambíguos); a nova cliente fica ligada a quem indicou; auto-indicação é ignorada. Origem dos links (`?origem=`) é guardada na reserva para medir cada canal.
+
+## Limitações conhecidas
 
 - Regra de reagendamento pela cliente (`reschedule_min_hours`) é configurável, mas o reagendamento ainda é feito pela profissional no painel.
 - Portfólio: por enquanto, link para o Instagram; o upload de fotos virá depois.
-- Sem envio automático de mensagens/e-mails (Fase 3).
 - Todas as profissionais de um evento ocupam o mesmo período (não há horários individuais por pessoa dentro do evento).
 - Pagamento de comissões às profissionais é controlado fora do sistema (o relatório mostra quanto é devido).
+- Envio real de WhatsApp e pagamento online dependem das contas externas (ver `docs/INTEGRACOES.md`); sem elas, o sistema opera em modo simulado / Pix manual.
+- A recompensa por indicação é informativa: o desconto é aplicado manualmente (ajustando o valor da reserva).
+- O worker precisa ser agendado no sistema operacional (Agendador de Tarefas/cron).

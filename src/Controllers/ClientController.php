@@ -8,6 +8,8 @@ use App\Core\Db;
 use App\Core\Response;
 use App\Core\Session;
 use App\Domain\ClientService;
+use App\Domain\ConsentService;
+use App\Domain\ReferralService;
 
 final class ClientController extends Controller
 {
@@ -76,7 +78,27 @@ final class ClientController extends Controller
                 'spent' => array_sum(array_map(static fn ($b) => (int) $b['price_cents'], $completed)),
             ],
             'canManage' => Auth::can('clients.manage'),
+            'consent' => ConsentService::history((int) $c['id']),
+            'messages' => Auth::can('messages.manage') ? Db::all('SELECT m.*, t.label FROM messages m JOIN message_templates t ON t.template_key = m.template_key WHERE m.client_id = ? ORDER BY m.id DESC LIMIT 30', [$c['id']]) : [],
+            'referralLink' => ReferralService::link((int) $c['id']),
+            'referredCount' => (int) Db::value('SELECT COUNT(*) FROM clients WHERE referred_by_client_id = ?', [$c['id']]),
+            'referrer' => $c['referred_by_client_id'] ? Db::one('SELECT id, name FROM clients WHERE id = ?', [$c['referred_by_client_id']]) : null,
         ]);
+    }
+
+    /** Registro manual de consentimento (ex.: a cliente pediu pessoalmente). */
+    public function consent(string $id): void
+    {
+        $c = Db::one('SELECT id FROM clients WHERE id = ?', [(int) $id]);
+        if (!$c) {
+            $this->notFound();
+            return;
+        }
+        $optIn = ($_POST['marketing'] ?? '') === '1';
+        $note = mb_substr($this->input('note'), 0, 190) ?: null;
+        ConsentService::set((int) $c['id'], $optIn, 'painel', $note, $this->userId(), client_ip());
+        Session::flash('success', $optIn ? 'Consentimento para ofertas registrado.' : 'Consentimento revogado: ela não receberá mais ofertas.');
+        Response::redirect('/admin/clientes/' . $c['id']);
     }
 
     public function create(): void

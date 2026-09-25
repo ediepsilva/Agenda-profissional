@@ -34,7 +34,49 @@ use App\Domain\BookingService;
         </dl>
         <?php if ($c['preferences']): ?><h3>Preferências</h3><p><?= nl2br(e($c['preferences'])) ?></p><?php endif; ?>
         <?php if ($c['notes']): ?><h3>Observações</h3><p><?= nl2br(e($c['notes'])) ?></p><?php endif; ?>
+
+        <h3>Ofertas e novidades</h3>
+        <p><?= (int) $c['marketing_opt_in'] ? '<span class="badge badge-confirmed">Aceita receber ofertas</span>' : '<span class="badge badge-cancelled">Não recebe ofertas</span>' ?>
+            <span class="muted small">Avisos das reservas são enviados em qualquer caso.</span></p>
+        <?php if ($canManage): ?>
+        <details>
+            <summary><?= (int) $c['marketing_opt_in'] ? 'Registrar revogação' : 'Registrar consentimento' ?></summary>
+            <form method="post" action="<?= e(url('/admin/clientes/' . $c['id'] . '/consentimento')) ?>" class="form">
+                <?= csrf_field() ?>
+                <input type="hidden" name="marketing" value="<?= (int) $c['marketing_opt_in'] ? '0' : '1' ?>">
+                <label for="consent-note">Como a cliente pediu</label>
+                <input type="text" id="consent-note" name="note" maxlength="190" required placeholder="Ex.: pediu pessoalmente no atendimento de 10/05">
+                <button class="btn btn-ghost btn-sm" type="submit">Salvar</button>
+            </form>
+        </details>
+        <?php endif; ?>
+        <?php if ($consent): ?>
+            <ul class="timeline small">
+                <?php foreach ($consent as $l): ?>
+                    <li><?= e(datetime_br($l['created_at'])) ?> · <strong><?= $l['action'] === 'opt_in' ? 'Aceitou' : 'Revogou' ?></strong> · <?= e(App\Domain\ConsentService::CHANNELS[$l['channel']] ?? $l['channel']) ?><?= $l['note'] ? ' · ' . e($l['note']) : '' ?><?= $l['user_name'] ? ' (' . e($l['user_name']) . ')' : '' ?></li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+
+        <h3>Indicações</h3>
+        <?php if ($referrer): ?><p>Indicada por <a href="<?= e(url('/admin/clientes/' . $referrer['id'])) ?>"><?= e($referrer['name']) ?></a>.</p><?php endif; ?>
+        <p>Indicou <strong><?= $referredCount ?></strong> cliente(s). Link dela:</p>
+        <div class="copy-row">
+            <input type="text" readonly id="ref-link" value="<?= e($referralLink) ?>" aria-label="Link de indicação">
+            <button type="button" class="btn btn-ghost btn-sm" data-copy="#ref-link">Copiar</button>
+        </div>
     </section>
+    <div>
+    <?php if ($messages): ?>
+    <section class="panel">
+        <h2>Mensagens</h2>
+        <ul class="money-list">
+            <?php foreach ($messages as $m): ?>
+                <li><span><strong><?= e($m['label']) ?></strong> · <?= e(App\Domain\MessageService::STATUS_LABELS[$m['status']]) ?> · <span class="muted small"><?= e(datetime_br($m['sent_at'] ?: $m['scheduled_at'])) ?></span></span></li>
+            <?php endforeach; ?>
+        </ul>
+    </section>
+    <?php endif; ?>
     <section class="panel">
         <h2>Histórico de atendimentos</h2>
         <?php if (!$bookings): ?><p class="muted">Nenhuma reserva ainda.</p><?php else: ?>
@@ -49,4 +91,5 @@ use App\Domain\BookingService;
         </ul>
         <?php endif; ?>
     </section>
+    </div>
 </div>
